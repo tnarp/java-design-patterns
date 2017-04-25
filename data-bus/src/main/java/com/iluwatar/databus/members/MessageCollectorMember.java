@@ -1,17 +1,17 @@
 /**
  * The MIT License
  * Copyright (c) 2014-2016 Ilkka Seppälä
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,45 +20,48 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.iluwatar.servicelayer.wizard;
 
-import org.hibernate.Criteria;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.criterion.Restrictions;
+package com.iluwatar.databus.members;
 
-import com.iluwatar.servicelayer.common.DaoBaseImpl;
-import com.iluwatar.servicelayer.spellbook.Spellbook;
+import com.iluwatar.databus.DataType;
+import com.iluwatar.databus.Member;
+import com.iluwatar.databus.data.MessageData;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
- * 
- * WizardDao implementation.
+ * Receiver of Data-Bus events that collects the messages from each {@link MessageData}.
  *
+ * @author Paul Campbell (pcampbell@kemitix.net)
  */
-public class WizardDaoImpl extends DaoBaseImpl<Wizard> implements WizardDao {
+public class MessageCollectorMember implements Member {
+
+  private static final Logger LOGGER = Logger.getLogger(MessageCollectorMember.class.getName());
+
+  private final String name;
+
+  private List<String> messages = new ArrayList<>();
+
+  public MessageCollectorMember(String name) {
+    this.name = name;
+  }
 
   @Override
-  public Wizard findByName(String name) {
-    Session session = getSessionFactory().openSession();
-    Transaction tx = null;
-    Wizard result = null;
-    try {
-      tx = session.beginTransaction();
-      Criteria criteria = session.createCriteria(persistentClass);
-      criteria.add(Restrictions.eq("name", name));
-      result = (Wizard) criteria.uniqueResult();
-      for (Spellbook s : result.getSpellbooks()) {
-        s.getSpells().size();
-      }
-      tx.commit();
-    } catch (Exception e) {
-      if (tx != null) {
-        tx.rollback();
-      }
-      throw e;
-    } finally {
-      session.close();
+  public void accept(final DataType data) {
+    if (data instanceof MessageData) {
+      handleEvent((MessageData) data);
     }
-    return result;
+  }
+
+  private void handleEvent(MessageData data) {
+    LOGGER.info(String.format("%s sees message %s", name, data.getMessage()));
+    messages.add(data.getMessage());
+  }
+
+  public List<String> getMessages() {
+    return Collections.unmodifiableList(messages);
   }
 }

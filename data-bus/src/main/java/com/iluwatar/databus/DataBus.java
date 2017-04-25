@@ -1,17 +1,17 @@
 /**
  * The MIT License
  * Copyright (c) 2014-2016 Ilkka Seppälä
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,45 +20,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.iluwatar.servicelayer.wizard;
 
-import org.hibernate.Criteria;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.criterion.Restrictions;
+package com.iluwatar.databus;
 
-import com.iluwatar.servicelayer.common.DaoBaseImpl;
-import com.iluwatar.servicelayer.spellbook.Spellbook;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * 
- * WizardDao implementation.
+ * The Data-Bus implementation.
  *
+ * <p>This implementation uses a Singleton.</p>
+ *
+ * @author Paul Campbell (pcampbell@kemitix.net)
  */
-public class WizardDaoImpl extends DaoBaseImpl<Wizard> implements WizardDao {
+public class DataBus {
 
-  @Override
-  public Wizard findByName(String name) {
-    Session session = getSessionFactory().openSession();
-    Transaction tx = null;
-    Wizard result = null;
-    try {
-      tx = session.beginTransaction();
-      Criteria criteria = session.createCriteria(persistentClass);
-      criteria.add(Restrictions.eq("name", name));
-      result = (Wizard) criteria.uniqueResult();
-      for (Spellbook s : result.getSpellbooks()) {
-        s.getSpells().size();
-      }
-      tx.commit();
-    } catch (Exception e) {
-      if (tx != null) {
-        tx.rollback();
-      }
-      throw e;
-    } finally {
-      session.close();
-    }
-    return result;
+  private static final DataBus INSTANCE = new DataBus();
+
+  private final Set<Member> listeners = new HashSet<>();
+
+  public static DataBus getInstance() {
+    return INSTANCE;
+  }
+
+  /**
+   * Register a member with the data-bus to start receiving events.
+   *
+   * @param member The member to register
+   */
+  public void subscribe(final Member member) {
+    this.listeners.add(member);
+  }
+
+  /**
+   * Deregister a member to stop receiving events.
+   *
+   * @param member The member to deregister
+   */
+  public void unsubscribe(final Member member) {
+    this.listeners.remove(member);
+  }
+
+  /**
+   * Publish and event to all members.
+   *
+   * @param event The event
+   */
+  public void publish(final DataType event) {
+    event.setDataBus(this);
+    listeners.forEach(listener -> listener.accept(event));
   }
 }
