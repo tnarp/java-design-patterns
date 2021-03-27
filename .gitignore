@@ -24,6 +24,7 @@ local.properties
 datanucleus.log
 /bin/
 *.log
+<<<<<<< HEAD
 event-sourcing/Journal.json
 
 ################## Checkstyle ###################
@@ -52,3 +53,7 @@ build/
 
 #################### VS Code ####################
 .vscode/
+=======
+data-mapper/src/main/resources/log4j.xml
+event-sourcing/Journal.json
+>>>>>>> 8cb57c705f5a8bc67aefaec29a5bea143068287c
